@@ -1,6 +1,6 @@
 from pyModbusTCP.client import ModbusClient
 
-client = ModbusClient(host="192.168.88.23", port=502)
+client = ModbusClient(host="192.168.88.11", port=502)
 
 if client.open():
     print("client is open")
@@ -14,7 +14,9 @@ if client.open():
     # print the result
     # print(result)
     print(val)
-
+    hum = client.read_input_registers(4003)
+    hum = float(hum[0])
+    print(hum, "%")
 
 
 # client.close()
