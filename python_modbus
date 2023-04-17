@@ -1,0 +1,20 @@
+from pyModbusTCP.client import ModbusClient
+
+client = ModbusClient(host="192.168.88.23", port=502)
+
+if client.open():
+    print("client is open")
+
+    # write coil (Value to be sent) 0 of address 4001
+    address = 4001
+    coil = 0
+    # result = client.read_coils(address, coil)
+    val = client.write_single_coil(address, coil)
+
+    # print the result
+    # print(result)
+    print(val)
+
+
+
+# client.close()

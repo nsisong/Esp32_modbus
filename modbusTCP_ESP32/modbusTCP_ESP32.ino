@@ -1,13 +1,17 @@
 // #ifdef ESP8266
-//  #include <ESP8266WiFi.h>
-// #else //ESP32
- #include <WiFi.h>
-// #endif
+#include <ESP8266WiFi.h>
+// // #else //ESP32
+//  #include <WiFi.h>
+// // #endif
 #include <ModbusIP_ESP8266.h>
 #include <WiFiManager.h>
 
-// Modbus Registers Offsets
-const int TEST_HREG = 100;
+//Modbus Registers Offsets
+const int LED_COIL = 4001;
+const int SWITCH_ISTS = 10001;
+//Used Pins
+const int ledPin = D2; //GPIO2
+const int switchPin = 0; //GPIO0
 
 
 //ModbusIP object
@@ -45,12 +49,23 @@ void setup() {
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
 
-  mb.server(502);
-  mb.addHreg(TEST_HREG, 0xABCD);
+  mb.server();
+
+  pinMode(ledPin, OUTPUT);
+  mb.addCoil(LED_COIL);
+  pinMode(switchPin, INPUT);
+  // Add SWITCH_ISTS register - Use addIsts() for digital inputs
+  mb.addIsts(SWITCH_ISTS);
 }
  
 void loop() {
    //Call once inside loop() - all magic here
    mb.task();
+
+   //Attach ledPin to LED_COIL register
+   digitalWrite(ledPin, mb.Coil(LED_COIL));
+   //Serial.println(mb.Coil(LED_COIL));
+   //Attach switchPin to SWITCH_ISTS register
+   mb.Ists(SWITCH_ISTS, digitalRead(switchPin));
    delay(10);
 }
