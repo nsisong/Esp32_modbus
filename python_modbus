@@ -6,17 +6,30 @@ if client.open():
     print("client is open")
 
     # write coil (Value to be sent) 0 of address 4001
-    address = 4001
-    coil = 0
-    # result = client.read_coils(address, coil)
-    val = client.write_single_coil(address, coil)
+    buzzer_address          = 4001
+    humidity_address        = 4003
+    temperature_address     = 4004
+    sensor_type             = 4005
+    buzzer_value            = 0
 
-    # print the result
-    # print(result)
-    print(val)
-    hum = client.read_input_registers(4003)
+    # write value to buzzer
+    buzzer  = client.write_single_coil(buzzer_address, buzzer_value)
+
+    # read from registers
+    hum     = client.read_input_registers(humidity_address)
+    temp    = client.read_input_registers(temperature_address)
+    sensor  = client.read_input_registers(sensor_type)
+
+    print(buzzer)
+    
     hum = float(hum[0])
-    print(hum, "%")
+    temp = float(temp[0])
+    if sensor[0] == 11:
+        print("Sensor type is: DHT11")
+    else:
+        print("NAN")
+    print("Temperature: {}%".format(temp))
+    print("Humidity: {}%".format(hum))
 
 
 # client.close()

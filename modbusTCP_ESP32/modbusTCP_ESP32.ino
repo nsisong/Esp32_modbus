@@ -7,19 +7,18 @@
 #include <WiFiManager.h>
 
 //Modbus Registers Offsets
-const int LED_COIL            = 4001;
-const int SWITCH_ISTS         = 4002;
+const int BUZZER_COIL         = 4001;
 const int HUMIDITY_IREG       = 4003;
 const int TEMPERATURE_IREG    = 4004;
 const int SENSOR_TYPE         = 4005;
 
 //Used Pins
-#define DHTPIN D2       // Digital pin connected to the DHT sensor 
-const int ledPin = D1;  //GPIO2
-const int switchPin = 0; //GPIO0
+#define DHTPIN        D2       // Digital pin connected to the DHT sensor 
+const int buzzerPin = D1;      // GPIO2
+const int switchPin = 0;       // GPIO0
 
 //Set the sensor used
-#define DHTTYPE    DHT11     // DHT 11
+#define DHTTYPE    DHT11      // DHT 11
 
 DHT_Unified dht(DHTPIN, DHTTYPE);
 uint32_t delayMS;
@@ -34,31 +33,7 @@ void setup() {
 
   // Initialize device.
   dht.begin();
-  Serial.println(F("DHTxx Unified Sensor Example"));
-  // Print temperature sensor details.
-  sensor_t sensor;
-  dht.temperature().getSensor(&sensor);
-  Serial.println(F("------------------------------------"));
-  Serial.println(F("Temperature Sensor"));
-  Serial.print  (F("Sensor Type: ")); Serial.println(sensor.name);
-  Serial.print  (F("Driver Ver:  ")); Serial.println(sensor.version);
-  Serial.print  (F("Unique ID:   ")); Serial.println(sensor.sensor_id);
-  Serial.print  (F("Max Value:   ")); Serial.print(sensor.max_value); Serial.println(F("°C"));
-  Serial.print  (F("Min Value:   ")); Serial.print(sensor.min_value); Serial.println(F("°C"));
-  Serial.print  (F("Resolution:  ")); Serial.print(sensor.resolution); Serial.println(F("°C"));
-  Serial.println(F("------------------------------------"));
-  // Print humidity sensor details.
-  dht.humidity().getSensor(&sensor);
-  Serial.println(F("Humidity Sensor"));
-  Serial.print  (F("Sensor Type: ")); Serial.println(sensor.name);
-  Serial.print  (F("Driver Ver:  ")); Serial.println(sensor.version);
-  Serial.print  (F("Unique ID:   ")); Serial.println(sensor.sensor_id);
-  Serial.print  (F("Max Value:   ")); Serial.print(sensor.max_value); Serial.println(F("%"));
-  Serial.print  (F("Min Value:   ")); Serial.print(sensor.min_value); Serial.println(F("%"));
-  Serial.print  (F("Resolution:  ")); Serial.print(sensor.resolution); Serial.println(F("%"));
-  Serial.println(F("------------------------------------"));
 
-  
   // Setup wifi details
   WiFiManager wm;
   // to reset settings - wipe stored credentials for testing these are stored by the esp library
@@ -91,49 +66,36 @@ void setup() {
   //Start the Modbus server
   mb.server();
 
-  pinMode(ledPin, OUTPUT);
-  mb.addCoil(LED_COIL);
+  pinMode(buzzerPin, OUTPUT);
+  mb.addCoil(BUZZER_COIL);
   pinMode(switchPin, INPUT);
-  // Add SWITCH_ISTS register - Use addIsts() for digital inputs
-  mb.addIsts(SWITCH_ISTS);
+  // Add TEMPERATURE / HUMIDITY register - Use addIreg() for analog inputs
   mb.addIreg(TEMPERATURE_IREG);
   mb.addIreg(HUMIDITY_IREG);
+  mb.addIreg(SENSOR_TYPE);
 
-  
 }
  
 void loop() {
-   //Call once inside loop() - all magic here
-   mb.task();
-
+  //Call once inside loop() - all magic here
+  mb.task();
+  // Print temperature sensor details.
+  sensor_t sensor;
+  dht.temperature().getSensor(&sensor);
+  mb.Ireg(SENSOR_TYPE, 11);
 
   // Get temperature event and print its value.
   sensors_event_t event;
   dht.temperature().getEvent(&event);
-  if (isnan(event.temperature)) {
-    Serial.println(F("Error reading temperature!"));
-  }
-  else {
-    Serial.print(F("Temperature: "));
-    Serial.print(event.temperature);
-    Serial.println(F("°C"));
-  }
+  mb.Ireg(TEMPERATURE_IREG, event.temperature);
+
   // Get humidity event and print its value.
   dht.humidity().getEvent(&event);
-  if (isnan(event.relative_humidity)) {
-    Serial.println(F("Error reading humidity!"));
-  }
-  else {
-    Serial.print(F("Humidity: "));
-    Serial.print(event.relative_humidity);
-    Serial.println(F("%"));
-  }
+  mb.Ireg(HUMIDITY_IREG, event.relative_humidity);
 
-   //Attach ledPin to LED_COIL register
-   digitalWrite(ledPin, mb.Coil(LED_COIL));
-  //  Serial.println(mb.Coil(LED_COIL));
-   //Attach switchPin to SWITCH_ISTS register
-   mb.Ists(SWITCH_ISTS, digitalRead(switchPin));
-   mb.Ireg(HUMIDITY_IREG, event.relative_humidity);
-   delay(10);
+
+  //Attach buzzerPin to BUZZER_COIL register
+  digitalWrite(buzzerPin, mb.Coil(BUZZER_COIL));
+  
+  delay(10);
 }
